@@ -1,5 +1,5 @@
 
-var observations = ['R', 'R', 'D', 'D']
+var observations = ['R', 'R']
 // Your code here
 var model = function() {
   var getRandomDir = function(distance, x, y)
@@ -53,13 +53,22 @@ var model = function() {
     else{
       var randomWalk = flip(0.1) //prob 0.1 to randomly walk
       var dir = randomWalk?  getRandomDir(distance, x, y): shortWalk(distance, x, y)
-      observe(Bernoulli({p: 0.9}), observations[idx] ==  dir)
+     // observe(Bernoulli({p: 0.9}), observations[idx] ==  dir)
+      observe(Categorical({vs:['U','L','R','D'], ps:[.1,.1,.7,.1]}))
+
       var new_path = path.concat(dir)
       var new_x = (dir == 'U')? x - 1 : (dir == 'D')? x + 1: x 
       var new_y = (dir == 'L')? y - 1 : (dir == 'R')? y + 1: y 
       return observePath(distance, maze, new_path, idx + 1, new_x, new_y)
     }
   }
+
+  //var makeGoodMaze() ={
+   // generate
+    //Disjtra
+    //if succeed return maze
+  //  else return make
+//  }
     var start_r = 0
     var start_c = 0
     var end_r = 2
