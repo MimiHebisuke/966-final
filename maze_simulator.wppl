@@ -63,19 +63,25 @@ var model = function() {
     }
   }
 
-  //var makeGoodMaze() ={
-   // generate
-    //Disjtra
-    //if succeed return maze
-  //  else return make
-//  }
-    var start_r = 0
+   var makeGoodMaze= function() {
+    var maze = webpplPackageTemplate.getMaze()
+    var dist = webpplPackageTemplate.findPath(maze)
+
+    if(dist.succeed)
+    {
+      return {maze: maze, dist: dist.dist}
+    }
+    else
+    {
+      return makeGoodMaze()
+    }
+  }
+  var maze = makeGoodMaze()
+  var start_r = 1
     var start_c = 0
-    var end_r = 2
+    var end_r = 1
     var end_c = 2
-    var maze_len = 3
-    var generate = webpplPackageTemplate.getPath(start_r, start_c, end_r, end_c, maze_len)
-  var result =  observePath([],[],[], -1, start_r, start_c)
+  var result =  observePath(maze.dist, maze.maze,[], 0, start_r, start_c)
   //condition(_.isEqual(path, observations))
   return result
 }
