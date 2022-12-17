@@ -1,0 +1,52 @@
+
+var observations = ['R', 'R']
+// Your code here
+var model = function() {
+    var generatePath = function(dir, n) {
+        if(n == 0){
+            return dir
+        }
+        else
+        {
+            var new_dir = categorical([0.25, 0.25, 0.25, 0.25], ['U', 'D', 'L' ,'R'])
+            var new_dir_list = dir.concat(new_dir)
+            return generatePath(new_dir, n-1)
+        }
+    }
+
+    var isvalid = function(maze, path, x, y, n){
+        if(n==0)
+        {
+            return true
+        }
+        else
+        {
+            if(maze[x][y] == 1){
+                return false
+            }
+            else
+            {
+                var new_x = path[2-n] == 'U'? x-1: path[2-n] == 'D'? x+1: x
+                var new_y = path[2-n] == 'L'? y-1: path[2-n] == 'R'? y+1: y
+                return isvalid(maze, path, new_x, new_y, n-1)
+                
+            }
+        }
+    }
+
+
+  var len_path = 2
+  var maze = webpplPackageTemplate.getMaze()
+  var path = generatePath([], len_path)
+    var start_c = 0
+    var start_r = 1
+    var end_r = 2
+    var end_c = 1
+ // condition(_.isEqual(path, observations))
+  condition(isvalid(maze, path, start_r, start_c, len_path))
+
+  return maze
+}
+var dist = Infer({method:"enumerate"}, model)
+
+console.log(dist)
