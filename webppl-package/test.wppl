@@ -1,5 +1,5 @@
 
-var observations = ['R', 'R']
+var observations = ['D', 'R', 'R', 'U']
 // Your code here
 var model = function() {
   var getRandomDir = function(distance, x, y)
@@ -20,6 +20,7 @@ var model = function() {
   var shortWalk = function(distance, x, y){
    // console.log(distance, x, y)
     var curr = distance[x][y]
+    //console.log(curr)
     var left = (y-1 >= 0 && distance[x][y-1] < curr ) 
     var up = (x-1 >= 0  && distance[x-1][y] < curr) 
     var down  = (x+1 < distance.length && distance[x+1][y] < curr) 
@@ -28,55 +29,66 @@ var model = function() {
     var valid_actions = filter(function(x) { return x[1]; }, actions_list)
     var actions_only = map(function(x) { return x[0]; }, valid_actions)
     var prob = map(function(x) {return 1;}, actions_only)
+    //console.log(actions_only)
     var dir = categorical(prob, actions_only)
     return dir; 
 
    
   }
-  var observePath = function(distance, maze, path, idx, x, y){
-    if(idx >= observations.length){
+  var observePath = function(distance, maze, path, idx, x, y, final_x, final_y){
+    if(idx >= observations.length || (x == final_x  && y == final_y)){
+      //observe until the observations
       return maze
-    }
-    else if(idx == -1)
-    {
-      //  var maze_len = 3
-       // var start_r = 0
-        //var start_c = 0
-       // var end_r = 2
-        //var end_c = 2
-        //var result = webpplPackageTemplate.getPath(start_r, start_c, end_r, end_c, maze_len)
-       // var distance = result.distance
-        //var maze = result.maze
-       // console.log(result)
-       var generateNewMaze = flip(0.99)
-       console.log(generateNewMaze)
-       if (generateNewMaze)
-       {
-         var new_maze = makeGoodMaze()
-         return observePath(new_maze.dist, new_maze.maze, [], idx + 1, x, y)
-       }
-       else
-       {
-        return observePath(distance, maze, [], idx + 1, x, y)
-        }
     }
     else{
       var randomWalk = flip(0.1) //prob 0.1 to randomly walk
-      var dir = randomWalk?  getRandomDir(distance, x, y): shortWalk(distance, x, y)
-     // observe(Bernoulli({p: 0.9}), observations[idx] ==  dir)
-      observe(Categorical({vs:['U','L','R','D'], ps:[.1,.1,.7,.1]}))
+      var dir = randomWalk?  getRandomDir(distance, x, y): shortWalk(distance, x, y) //choose the algorithm for a walk and walk
+     //observe the result compare to the observations
+      
+      if(observations[idx] == 'U')
+      {
+        observe(Categorical({vs:['U','L','R','D'], ps:[.7,.1,.1,.1]}))
+      }
+      else if(observations[idx] == 'L')
+      {
+        observe(Categorical({vs:['U','L','R','D'], ps:[.1,.7,.1,.1]}))
+      }
+      else if(observations[idx] == 'R')
+      {
+        observe(Categorical({vs:['U','L','R','D'], ps:[.1,.1,.7,.1]}))
+      }
+      else 
+      {
+        observe(Categorical({vs:['U','L','R','D'], ps:[.1,.1,.1,.7]}))
+      }
 
       var new_path = path.concat(dir)
       var new_x = (dir == 'U')? x - 1 : (dir == 'D')? x + 1: x 
       var new_y = (dir == 'L')? y - 1 : (dir == 'R')? y + 1: y 
-      return observePath(distance, maze, new_path, idx + 1, new_x, new_y)
+      return observePath(distance, maze, new_path, idx + 1, new_x, new_y, final_x, final_y)
     }
   }
 
-   var makeGoodMaze= function() {
-    var maze = webpplPackageTemplate.getMaze()
-    var dist = webpplPackageTemplate.findPath(maze)
+   
+  var random_maze = function(grid, n){
+    //randomly generate an array of 0/1 with size n 
+    if(n==0){
+      return grid
+    }
+    else{
+      var val = flip(0.2)? 1:0
+      var new_grid = grid.concat(val)
+      return random_maze(new_grid, n-1)
+    }
+  }
 
+  var makeGoodMaze= function() {
+    //make a good maze (has path from beginning to end) 
+    var total_grid = 9
+    var maze_list = random_maze([], total_grid)
+    var maze = webpplPackageTemplate.makeMaze(maze_list)
+    var dist = webpplPackageTemplate.findPath(maze)
+  
     if(dist.succeed)
     {
       return {maze: maze, dist: dist.dist}
@@ -85,23 +97,20 @@ var model = function() {
     {
       return makeGoodMaze()
     }
-  }
-  var maze = makeGoodMaze()
-  var start_r = 1
-    var start_c = 0
-    var end_r = 1
-    var end_c = 2
-  var result =  observePath(maze.dist, maze.maze,[], -1, start_r, start_c)
-  //condition(_.isEqual(path, observations))
-  return result
-}
-var dist = Infer({method:"MCMC", samples: 10000}, model)
 
-console.log(dist)
-console.log(dist.samples[0])
-console.log(dist.samples[1])
-console.log(dist.samples[2])
-console.log(dist.samples[3])
-console.log(dist.samples[4])
-console.log(dist.samples[5])
-console.log(dist.samples[10])
+  }
+ var maze = makeGoodMaze()
+ 
+  var start_r = 1
+  var start_c = 0
+  var end_r = 1
+  var end_c = 2
+
+  var result =  observePath(maze.dist,maze.maze,[], 0, start_r, start_c, end_r, end_c)
+  return maze.maze
+}
+var dist = Infer({method:"MCMC", samples: 100000}, model)
+
+//console.log(dist)
+
+console.log(webpplPackageTemplate.calculateScore(dist.samples))
